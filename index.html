@@ -1,14 +1,11 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Google Sheet Editor</title>
   <style>
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 20px;
     }
     th, td {
       border: 1px solid #ddd;
@@ -23,74 +20,61 @@
       border: none;
       padding: 5px;
     }
-    button {
-      margin-top: 20px;
-      padding: 10px 20px;
-      background-color: #007bff;
-      color: white;
-      border: none;
-      cursor: pointer;
-    }
-    button:hover {
-      background-color: #0056b3;
-    }
   </style>
 </head>
 <body>
-  <h1>Google Sheet Editor</h1>
-  <table id="sheet-data">
+  <h1>Editable Google Sheet</h1>
+  <table id="data-table">
     <thead></thead>
     <tbody></tbody>
   </table>
-  
+
   <script>
-    // Fetch Google Sheet data and render it as an editable table
+    // Fetch data from the sheet
     google.script.run.withSuccessHandler(renderTable).getSheetData();
 
     function renderTable(data) {
-      const tableHead = document.querySelector('#sheet-data thead');
-      const tableBody = document.querySelector('#sheet-data tbody');
+      const table = document.getElementById('data-table');
+      const thead = table.querySelector('thead');
+      const tbody = table.querySelector('tbody');
 
-      // Clear existing content
-      tableHead.innerHTML = '';
-      tableBody.innerHTML = '';
+      // Clear previous content
+      thead.innerHTML = '';
+      tbody.innerHTML = '';
 
-      // Render table headers
-      const headers = data[0];
+      // Create header row
       const headerRow = document.createElement('tr');
-      headers.forEach(header => {
+      data[0].forEach(header => {
         const th = document.createElement('th');
         th.textContent = header;
         headerRow.appendChild(th);
       });
-      tableHead.appendChild(headerRow);
+      thead.appendChild(headerRow);
 
-      // Render table rows with editable cells
-      for (let i = 1; i < data.length; i++) {
-        const row = document.createElement('tr');
-        data[i].forEach((cell, j) => {
+      // Create rows
+      data.slice(1).forEach((row, rowIndex) => {
+        const tr = document.createElement('tr');
+        row.forEach((cell, colIndex) => {
           const td = document.createElement('td');
           const input = document.createElement('input');
           input.type = 'text';
           input.value = cell;
-          input.dataset.row = i;
-          input.dataset.col = j;
-          input.addEventListener('change', handleInputChange);
+          input.dataset.row = rowIndex;
+          input.dataset.col = colIndex;
+
+          // Add change event
+          input.addEventListener('change', function () {
+            const newValue = this.value;
+            const row = parseInt(this.dataset.row, 10);
+            const col = parseInt(this.dataset.col, 10);
+            google.script.run.updateSheetData(row + 1, col + 1, newValue);
+          });
+
           td.appendChild(input);
-          row.appendChild(td);
+          tr.appendChild(td);
         });
-        tableBody.appendChild(row);
-      }
-    }
-
-    function handleInputChange(event) {
-      const input = event.target;
-      const row = parseInt(input.dataset.row, 10);
-      const col = parseInt(input.dataset.col, 10);
-      const value = input.value;
-
-      // Send updated value to Google Sheet
-      google.script.run.updateSheetData(row, col, value);
+        tbody.appendChild(tr);
+      });
     }
   </script>
 </body>
