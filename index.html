@@ -27,12 +27,24 @@
     <script>
         let sheetData = [];
 
-        // Function to load data from Google Sheets using Apps Script
+        // Function to load data from Google Sheets using AJAX (HTTP Request)
         function loadSheetData() {
-            google.script.run.withSuccessHandler(function(response) {
-                sheetData = response;
+            const url = 'YOUR_APPS_SCRIPT_WEB_APP_URL'; // Replace with your actual Apps Script Web App URL
+            const params = new URLSearchParams();
+            params.append('action', 'getData');
+            
+            fetch(url, {
+                method: 'POST',
+                body: params
+            })
+            .then(response => response.json())
+            .then(data => {
+                sheetData = data;
                 renderTable(sheetData);
-            }).getSheetData();
+            })
+            .catch(error => {
+                console.error('Error loading data:', error);
+            });
         }
 
         // Function to render the table with editable fields
@@ -54,10 +66,25 @@
             });
         }
 
-        // Function to save changes back to Google Sheets
+        // Function to save changes back to Google Sheets using AJAX (HTTP Request)
         function saveSheetData() {
-            google.script.run.saveSheetData(sheetData);
-            alert('Changes saved!');
+            const url = 'https://script.google.com/macros/s/AKfycbzkyXX4Gg7Pg-9mwoLIFcVAxZ0G59mVuzQFnQfRUOs4BqAXlUh_ffpUMampAivY3KVrQg/exec'; // Replace with your actual Apps Script Web App URL
+            const params = new URLSearchParams();
+            params.append('action', 'saveData');
+            params.append('data', JSON.stringify(sheetData));
+            
+            fetch(url, {
+                method: 'POST',
+                body: params
+            })
+            .then(response => response.text())
+            .then(data => {
+                alert('Changes saved!');
+            })
+            .catch(error => {
+                console.error('Error saving data:', error);
+                alert('Failed to save changes');
+            });
         }
     </script>
 </body>
