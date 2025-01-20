@@ -1,81 +1,64 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Google Sheet Editor</title>
-  <style>
-    table {
-      width: 100%;
-      border-collapse: collapse;
-    }
-    th, td {
-      border: 1px solid #ddd;
-      padding: 8px;
-      text-align: left;
-    }
-    th {
-      background-color: #f4f4f4;
-    }
-    input {
-      width: 100%;
-      border: none;
-      padding: 5px;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Sheets Editor</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        td {
+            padding: 8px;
+            text-align: left;
+        }
+    </style>
 </head>
 <body>
-  <h1>Editable Google Sheet</h1>
-  <table id="data-table">
-    <thead></thead>
-    <tbody></tbody>
-  </table>
+    <h1>Google Sheets Editor</h1>
+    <button onclick="loadSheetData()">Load Data</button>
+    <button onclick="saveSheetData()">Save Changes</button>
+    <table id="sheetTable"></table>
 
-  <script>
-    // Fetch data from the sheet
-    google.script.run.withSuccessHandler(renderTable).getSheetData();
+    <script>
+        let sheetData = [];
 
-    function renderTable(data) {
-      const table = document.getElementById('data-table');
-      const thead = table.querySelector('thead');
-      const tbody = table.querySelector('tbody');
+        // Function to load data from Google Sheets using Apps Script
+        function loadSheetData() {
+            google.script.run.withSuccessHandler(function(response) {
+                sheetData = response;
+                renderTable(sheetData);
+            }).getSheetData();
+        }
 
-      // Clear previous content
-      thead.innerHTML = '';
-      tbody.innerHTML = '';
+        // Function to render the table with editable fields
+        function renderTable(data) {
+            const table = document.getElementById('sheetTable');
+            table.innerHTML = '';
+            data.forEach((row, rowIndex) => {
+                const tr = document.createElement('tr');
+                row.forEach((cell, cellIndex) => {
+                    const td = document.createElement('td');
+                    td.contentEditable = true;
+                    td.textContent = cell;
+                    td.addEventListener('input', function() {
+                        sheetData[rowIndex][cellIndex] = td.textContent;
+                    });
+                    tr.appendChild(td);
+                });
+                table.appendChild(tr);
+            });
+        }
 
-      // Create header row
-      const headerRow = document.createElement('tr');
-      data[0].forEach(header => {
-        const th = document.createElement('th');
-        th.textContent = header;
-        headerRow.appendChild(th);
-      });
-      thead.appendChild(headerRow);
-
-      // Create rows
-      data.slice(1).forEach((row, rowIndex) => {
-        const tr = document.createElement('tr');
-        row.forEach((cell, colIndex) => {
-          const td = document.createElement('td');
-          const input = document.createElement('input');
-          input.type = 'text';
-          input.value = cell;
-          input.dataset.row = rowIndex;
-          input.dataset.col = colIndex;
-
-          // Add change event
-          input.addEventListener('change', function () {
-            const newValue = this.value;
-            const row = parseInt(this.dataset.row, 10);
-            const col = parseInt(this.dataset.col, 10);
-            google.script.run.updateSheetData(row + 1, col + 1, newValue);
-          });
-
-          td.appendChild(input);
-          tr.appendChild(td);
-        });
-        tbody.appendChild(tr);
-      });
-    }
-  </script>
+        // Function to save changes back to Google Sheets
+        function saveSheetData() {
+            google.script.run.saveSheetData(sheetData);
+            alert('Changes saved!');
+        }
+    </script>
 </body>
 </html>
